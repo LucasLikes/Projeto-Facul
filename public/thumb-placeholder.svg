@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" role="img" aria-label="Quadra esportiva">
+  <defs>
+    <linearGradient id="grass" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#303e2a"/>
+      <stop offset="1" stop-color="#101710"/>
+    </linearGradient>
+    <pattern id="stripes" width="190" height="600" patternUnits="userSpaceOnUse">
+      <rect width="95" height="600" fill="#c5f36b" opacity=".035"/>
+    </pattern>
+  </defs>
+  <rect width="960" height="600" fill="url(#grass)"/>
+  <rect width="960" height="600" fill="url(#stripes)"/>
+  <rect x="45" y="45" width="870" height="510" rx="3" fill="none" stroke="#d7f0bc" stroke-opacity=".35" stroke-width="4"/>
+  <path d="M480 45v510M45 300h870" stroke="#d7f0bc" stroke-opacity=".3" stroke-width="3"/>
+  <circle cx="480" cy="300" r="98" fill="none" stroke="#d7f0bc" stroke-opacity=".3" stroke-width="3"/>
+  <path d="M45 180h120v240H45m870-240H795v240h120" fill="none" stroke="#d7f0bc" stroke-opacity=".3" stroke-width="3"/>
+  <circle cx="480" cy="300" r="16" fill="#c5f36b"/>
+</svg>
