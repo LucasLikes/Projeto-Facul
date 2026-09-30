@@ -9,6 +9,7 @@ const bodySchema = z.discriminatedUnion("action", [
   z.object({ action: z.enum(["hide", "show"]), replay_id: z.string().uuid() }),
   z.object({ action: z.literal("delete"), replay_id: z.string().uuid() }),
   z.object({ action: z.literal("resolve_report"), report_id: z.string().uuid() }),
+  z.object({ action: z.literal("delete_comment"), comment_id: z.string().uuid() }),
 ]);
 
 export async function PATCH(request: Request) {
@@ -18,6 +19,18 @@ export async function PATCH(request: Request) {
   if (!body.success) return apiError(400, "invalid_request", "Ação inválida.");
   const courtIds = context.courts.map((court) => court.id);
   if (!courtIds.length) return apiError(404, "not_found", "A arena não possui quadras.");
+
+  if (body.data.action === "delete_comment") {
+    const { data: comment, error: commentError } = await context.admin.from("replay_comments")
+      .select("id,replay_id").eq("id", body.data.comment_id).maybeSingle();
+    if (commentError || !comment) return apiError(404, "not_found", "Comentário não encontrado.");
+    const { data: replay } = await context.admin.from("replays").select("id")
+      .eq("id", comment.replay_id).in("court_id", courtIds).maybeSingle();
+    if (!replay) return apiError(404, "not_found", "Comentário não encontrado nesta arena.");
+    const { error } = await context.admin.from("replay_comments").delete().eq("id", comment.id);
+    if (error) return apiError(503, "database_unavailable", "Não foi possível remover o comentário.");
+    return NextResponse.json({ apagado: true });
+  }
 
   if (body.data.action === "resolve_report") {
     const { data: report, error } = await context.admin.from("reports").select("id,replay_id").eq("id", body.data.report_id).maybeSingle();

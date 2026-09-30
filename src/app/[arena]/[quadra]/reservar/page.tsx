@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { ArenaHeader } from "@/components/ArenaHeader";
 import { ReservationForm } from "@/components/ReservationForm";
+import { LikesCredit } from "@/components/LikesCredit";
 import { getPublicBookingData } from "@/lib/public-data";
 import { saoPauloDateString } from "@/lib/time";
 import { z } from "zod";
@@ -45,6 +46,7 @@ export default async function ReservationPage({
         initialTime={selectedTime.success ? selectedTime.data : ""}
       />
       <footer className="court-footer"><span>FEZ BONITO · {booking.arena.nome.toUpperCase()}</span></footer>
+      <LikesCredit />
     </main>
   );
 }

@@ -10,6 +10,11 @@ export const demoArena: Arena = {
   logo_url: null,
   cor_primaria: "#c5f36b",
   retention_days: 30,
+  publicidade_ativa: false,
+  publicidade_titulo: null,
+  publicidade_texto: null,
+  publicidade_imagem_url: null,
+  publicidade_whatsapp: "5511999999999",
 };
 
 export const demoCourts: Court[] = [

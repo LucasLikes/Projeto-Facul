@@ -30,4 +30,8 @@ export const bookingSchema = z.object({
 });
 
 export const reportSchema = z.object({ motivo: z.string().trim().min(5).max(500) });
+export const replayCommentSchema = z.object({
+  apelido: z.string().trim().min(2).max(32),
+  texto: z.string().trim().min(2).max(500),
+});
 export const signInSchema = z.object({ email: z.string().trim().email().max(254) });

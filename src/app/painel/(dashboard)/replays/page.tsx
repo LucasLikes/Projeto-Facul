@@ -21,6 +21,7 @@ export default async function ReplaysPage({ searchParams }: { searchParams: Prom
   const requestedCourt = context.courts.find((court) => court.id === query.quadra);
   let replayRows: { id: string; court_id: string; capturado_em: string; duracao_s: number; visivel: boolean; visualizacoes: number; compartilhamentos: number }[] = [];
   let reportRows: { id: string; replay_id: string; motivo: string; criado_em: string }[] = [];
+  let commentRows: { id: string; replay_id: string; apelido: string; texto: string; criado_em: string }[] = [];
   if (courtIds.length && startDate <= endDate) {
     const replayQuery = context.admin.from("replays").select("id,court_id,capturado_em,duracao_s,visivel,visualizacoes,compartilhamentos")
       .in("court_id", requestedCourt ? [requestedCourt.id] : courtIds).gte("capturado_em", `${startDate}T00:00:00-03:00`).lte("capturado_em", `${endDate}T23:59:59-03:00`)
@@ -29,8 +30,12 @@ export default async function ReplaysPage({ searchParams }: { searchParams: Prom
     replayRows = replayResult.data ?? [];
     const replayIds = replayRows.map((replay) => replay.id);
     if (replayIds.length) {
-      const reportResult = await context.admin.from("reports").select("id,replay_id,motivo,criado_em").in("replay_id", replayIds).is("resolvido_em", null).order("criado_em", { ascending: false });
+      const [reportResult, commentResult] = await Promise.all([
+        context.admin.from("reports").select("id,replay_id,motivo,criado_em").in("replay_id", replayIds).is("resolvido_em", null).order("criado_em", { ascending: false }),
+        context.admin.from("replay_comments").select("id,replay_id,apelido,texto,criado_em").in("replay_id", replayIds).order("criado_em", { ascending: false }).limit(200),
+      ]);
       reportRows = reportResult.data ?? [];
+      commentRows = commentResult.data ?? [];
     }
   }
 
@@ -43,7 +48,7 @@ export default async function ReplaysPage({ searchParams }: { searchParams: Prom
       <label>Até<input type="date" name="ate" defaultValue={endDate} /></label>
       <button type="submit">Filtrar</button>
     </form>
-    <ReplayModeration replays={replayRows} reports={reportRows} courts={context.courts} />
+    <ReplayModeration replays={replayRows} reports={reportRows} comments={commentRows} courts={context.courts} />
     {!replayRows.length ? <p className="panel-empty">Nenhum replay encontrado neste período.</p> : null}
     <p className="panel-small-note"><ExternalLink size={14} /> A lista mostra até 100 replays; ajuste o período para encontrar itens mais antigos.</p>
   </div>;

@@ -25,6 +25,8 @@ export function ReservationForm({ arena, court, days, initialDate, initialTime }
   const day = days.find((item) => item.date === selectedDate);
   const selectedSlot = day?.slots.find((slot) => slot.hora_inicio === selectedTime && slot.livre);
   const selectedDateLabel = selectedDate ? formatLocalDate(selectedDate, { weekday: "long", day: "2-digit", month: "long" }) : "";
+  const arenaPhone = arena.telefone_whatsapp.replace(/\D/g, "");
+  const helpMessage = encodeURIComponent(`Olá! Tenho uma dúvida sobre a quadra ${court.nome} da ${arena.nome}.`);
 
   function submit(formData: FormData) {
     setError("");
@@ -102,6 +104,7 @@ export function ReservationForm({ arena, court, days, initialDate, initialTime }
         {isPending ? <LoaderCircle className="spin" size={19} /> : <span>Solicitar reserva</span>}
         {!isPending ? <ArrowRight size={19} /> : null}
       </button>
+      {arenaPhone ? <a className="booking-help-whatsapp" href={`https://wa.me/${arenaPhone}?text=${helpMessage}`} target="_blank" rel="noreferrer"><MessageCircle size={18} />Dúvidas? Fale com a arena no WhatsApp</a> : null}
       <p className="booking-note">Sem pagamento online. A reserva fica pendente até a confirmação da arena.</p>
     </form>
   );

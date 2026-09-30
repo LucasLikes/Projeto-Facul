@@ -26,5 +26,5 @@ export default async function CourtPage({
   const nowMode = query.agora === "1";
   const day = await getPublicCourtDay(route.data.arena, route.data.quadra, date);
   if (!day) notFound();
-  return <CourtTimeline arena={day.arena} court={day.court} date={day.date} slots={day.slots} agora={nowMode} />;
+  return <CourtTimeline arena={day.arena} court={day.court} courts={day.courts} date={day.date} slots={day.slots} agora={nowMode} />;
 }

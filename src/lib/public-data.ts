@@ -2,7 +2,7 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getRetentionDays } from "@/lib/env";
 import { demoArena, demoCourts, getDemoReplays } from "@/lib/demo-data";
-import type { Arena, BookingDay, BookingView, Court, CourtDay, CourtSlot, ReplayView } from "@/lib/domain";
+import type { Arena, BookingDay, BookingView, Court, CourtDay, CourtSlot, ReplayComment, ReplayView } from "@/lib/domain";
 import { getR2Bucket, getR2Client } from "@/lib/r2";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { addLocalDays, formatLocalDate, hourText, isFutureLocalSlot, localDayRange, saoPauloDateString, slotIsCurrent, weekdayForLocalDate } from "@/lib/time";
@@ -81,6 +81,7 @@ export async function getPublicCourtDay(arenaSlug: string, courtSlug: string, da
     return {
       arena: demoArena,
       court,
+      courts: demoCourts,
       date,
       hasConfiguredSlots: true,
       slots: buildCourtSlots(date, slots, replays, demoBookings(date, court.id)),
@@ -88,13 +89,15 @@ export async function getPublicCourtDay(arenaSlug: string, courtSlug: string, da
   }
 
   const { data: arenaRow, error: arenaError } = await admin.from("arenas")
-    .select("id,nome,slug,cidade,telefone_whatsapp,logo_url,cor_primaria,retention_days")
+    .select("id,nome,slug,cidade,telefone_whatsapp,logo_url,cor_primaria,retention_days,publicidade_ativa,publicidade_titulo,publicidade_texto,publicidade_imagem_url,publicidade_whatsapp")
     .eq("slug", arenaSlug).maybeSingle();
   if (arenaError || !arenaRow) return null;
-  const { data: courtRow, error: courtError } = await admin.from("courts")
+  const { data: courtRows, error: courtError } = await admin.from("courts")
     .select("id,arena_id,nome,esporte,tipo,slug,ativa")
-    .eq("arena_id", arenaRow.id).eq("slug", courtSlug).eq("ativa", true).maybeSingle();
-  if (courtError || !courtRow) return null;
+    .eq("arena_id", arenaRow.id).eq("ativa", true).order("nome");
+  if (courtError) return null;
+  const courtRow = (courtRows ?? []).find((item) => item.slug === courtSlug);
+  if (!courtRow) return null;
 
   const { start, end } = localDayRange(date);
   const [slotResult, bookingResult, replayResult] = await Promise.all([
@@ -111,6 +114,7 @@ export async function getPublicCourtDay(arenaSlug: string, courtSlug: string, da
   return {
     arena,
     court: courtRow as Court,
+    courts: (courtRows ?? []) as Court[],
     date,
     hasConfiguredSlots: configured.length > 0,
     slots: buildCourtSlots(date, slots, replays, (bookingResult.data ?? []) as BookingView[]),
@@ -127,7 +131,7 @@ export async function getPublicReplay(id: string): Promise<{ replay: ReplayView;
   }
 
   const { data: replayRow, error } = await admin.from("replays")
-    .select("id,court_id,capturado_em,duracao_s,video_key,thumb_key,expira_em,visivel,courts(id,arena_id,nome,esporte,tipo,slug,ativa,arenas(id,nome,slug,cidade,telefone_whatsapp,logo_url,cor_primaria,retention_days))")
+    .select("id,court_id,capturado_em,duracao_s,video_key,thumb_key,expira_em,visivel,courts(id,arena_id,nome,esporte,tipo,slug,ativa,arenas(id,nome,slug,cidade,telefone_whatsapp,logo_url,cor_primaria,retention_days,publicidade_ativa,publicidade_titulo,publicidade_texto,publicidade_imagem_url,publicidade_whatsapp))")
     .eq("id", id).eq("visivel", true).gt("expira_em", new Date().toISOString()).maybeSingle();
   if (error || !replayRow) return null;
 
@@ -135,6 +139,32 @@ export async function getPublicReplay(id: string): Promise<{ replay: ReplayView;
   if (!courtRelation?.arenas) return null;
   const [replay] = await signReplayUrls([replayRow as ReplayRow], true);
   return { replay, arena: courtRelation.arenas, court: courtRelation };
+}
+
+export async function getPublicReplayComments(replayId: string): Promise<{ comments: ReplayComment[]; enabled: boolean }> {
+  const admin = getAdminSupabase();
+  if (!admin) {
+    const isDemoReplay = demoCourts.some((court) => getDemoReplays(court.id, saoPauloDateString()).some((item) => item.id === replayId));
+    return {
+      enabled: false,
+      comments: isDemoReplay ? [{
+        id: "43b913ae-8f24-4588-a596-ff1ddb9a0b6c",
+        replay_id: replayId,
+        apelido: "Jogador da arena",
+        texto: "Que lance! Este espaço pode receber comentários da galera.",
+        criado_em: "2026-09-29T20:14:00-03:00",
+        demo: true,
+      }] : [],
+    };
+  }
+
+  const { data: replay, error: replayError } = await admin.from("replays").select("id")
+    .eq("id", replayId).eq("visivel", true).gt("expira_em", new Date().toISOString()).maybeSingle();
+  if (replayError || !replay) return { comments: [], enabled: true };
+  const { data, error } = await admin.from("replay_comments")
+    .select("id,replay_id,apelido,texto,criado_em")
+    .eq("replay_id", replayId).order("criado_em", { ascending: false }).limit(50);
+  return { comments: error ? [] : (data ?? []) as ReplayComment[], enabled: true };
 }
 
 export async function getPublicBookingData(arenaSlug: string, courtSlug: string): Promise<{ arena: Arena; court: Court; days: BookingDay[] } | null> {
@@ -162,7 +192,7 @@ export async function getPublicBookingData(arenaSlug: string, courtSlug: string)
     };
   }
 
-  const { data: arenaRow } = await admin.from("arenas").select("id,nome,slug,cidade,telefone_whatsapp,logo_url,cor_primaria,retention_days").eq("slug", arenaSlug).maybeSingle();
+  const { data: arenaRow } = await admin.from("arenas").select("id,nome,slug,cidade,telefone_whatsapp,logo_url,cor_primaria,retention_days,publicidade_ativa,publicidade_titulo,publicidade_texto,publicidade_imagem_url,publicidade_whatsapp").eq("slug", arenaSlug).maybeSingle();
   if (!arenaRow) return null;
   const { data: courtRow } = await admin.from("courts").select("id,arena_id,nome,esporte,tipo,slug,ativa").eq("arena_id", arenaRow.id).eq("slug", courtSlug).eq("ativa", true).maybeSingle();
   if (!courtRow) return null;

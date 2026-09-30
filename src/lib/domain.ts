@@ -7,6 +7,11 @@ export type Arena = {
   logo_url: string | null;
   cor_primaria: string;
   retention_days: number;
+  publicidade_ativa: boolean;
+  publicidade_titulo: string | null;
+  publicidade_texto: string | null;
+  publicidade_imagem_url: string | null;
+  publicidade_whatsapp: string;
 };
 
 export type Court = {
@@ -28,6 +33,15 @@ export type ReplayView = {
   demo: boolean;
 };
 
+export type ReplayComment = {
+  id: string;
+  replay_id: string;
+  apelido: string;
+  texto: string;
+  criado_em: string;
+  demo?: boolean;
+};
+
 export type CourtSlot = {
   id: string;
   hora_inicio: string;
@@ -40,6 +54,7 @@ export type CourtSlot = {
 export type CourtDay = {
   arena: Arena;
   court: Court;
+  courts: Court[];
   date: string;
   slots: CourtSlot[];
   hasConfiguredSlots: boolean;

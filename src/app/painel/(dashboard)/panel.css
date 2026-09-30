@@ -162,6 +162,11 @@
 .report-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 7px; }
 .report-item p { margin: 0; color: var(--panel-fg); font-size: 10px; line-height: 1.5; }
 .report-item button { display: flex; flex: 0 0 auto; align-items: center; gap: 5px; border: 0; background: none; color: var(--panel-brand); font-size: 9px; cursor: pointer; }
+.moderated-comments { grid-column: 1 / -1; padding: 10px; border-left: 2px solid var(--panel-brand); background: #c5f36b08; }
+.moderated-comment { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-top: 7px; }
+.moderated-comment p { margin: 0; color: var(--panel-fg); font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+.moderated-comment p strong { color: var(--panel-brand); }
+.moderated-comment button { display: grid; width: 28px; height: 28px; flex: 0 0 auto; place-items: center; border: 1px solid var(--panel-line); border-radius: 4px; background: var(--panel-bg); color: var(--panel-red); cursor: pointer; }
 
 .court-admin-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding-top: 16px; }
 .court-admin-card { min-width: 0; border: 1px solid var(--panel-line); border-radius: 5px; background: var(--panel-surface); }
@@ -203,8 +208,14 @@
 .settings-form { max-width: 760px; margin-top: 10px; }
 .settings-section { padding: 20px 0; border-bottom: 1px solid var(--panel-line); }
 .settings-field { margin-top: 16px; color: var(--panel-fg); font-size: 10px; }
-.settings-field input { min-height: 43px; font-size: 12px; }
+.settings-field input,.settings-field textarea { min-height: 43px; padding: 10px; border: 1px solid var(--panel-line); border-radius: 4px; background: var(--panel-bg); color: var(--panel-fg); font-size: 12px; }
+.settings-field textarea { resize: vertical; line-height: 1.5; }
 .settings-field small { color: var(--panel-muted); font-size: 9px; font-weight: 400; line-height: 1.5; }
+.marketing-toggle { display: flex; align-items: flex-start; gap: 10px; margin-top: 15px; padding: 12px; border: 1px solid var(--panel-line); border-radius: 5px; background: var(--panel-surface); cursor: pointer; }
+.marketing-toggle input { width: 18px; height: 18px; flex: 0 0 auto; margin: 1px 0 0; accent-color: var(--panel-brand); }
+.marketing-toggle > span { display: flex; flex-direction: column; gap: 4px; }
+.marketing-toggle strong { color: var(--panel-fg); font-size: 11px; }
+.marketing-toggle small { color: var(--panel-muted); font-size: 9px; line-height: 1.5; }
 .color-setting > div { display: flex; align-items: center; gap: 10px; }
 .color-setting input[type="color"] { width: 56px; height: 42px; padding: 4px; }
 .color-setting code { color: var(--panel-muted); font-size: 10px; }

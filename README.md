@@ -32,7 +32,7 @@ cp .env.example .env.local
 
 No PowerShell, use `Copy-Item .env.example .env.local` no lugar de `cp`.
 
-2. Crie um projeto Supabase. Aplique `supabase/migrations/202609280001_initial_schema.sql` no SQL Editor ou com a Supabase CLI. Depois aplique `supabase/seed.sql` para carregar a Arena Teste.
+2. Crie um projeto Supabase. Aplique em ordem todos os arquivos de `supabase/migrations/` no SQL Editor ou com a Supabase CLI. Depois aplique `supabase/seed.sql` para carregar a Arena Teste.
 
 3. Preencha `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` no `.env.local`. O service-role key só deve existir em ambiente server-side.
 
@@ -61,11 +61,28 @@ values ('UUID-DO-USUARIO-AUTH', '10000000-0000-4000-8000-000000000001', 'owner')
 
 ## Deploy na Vercel
 
-1. Importe o repositório e configure todas as variáveis de `.env.example` no projeto Vercel. Use valores de produção para Supabase, R2 e `NEXT_PUBLIC_APP_URL`.
-2. Em Supabase Auth, configure a URL do site e permita `https://SEU-DOMINIO/auth/callback`.
-3. Mantenha o bucket R2 privado. Para reprodução por `<video>` a partir de URL assinada, configure CORS do bucket para permitir `GET` da origem do app. O upload de ingestão ocorre diretamente do serviço de borda para URLs `PUT` assinadas.
-4. `vercel.json` agenda `GET /api/cron/retention` diariamente às 06:00 UTC (03:00 em São Paulo). Cadastre `CRON_SECRET` na Vercel; o Cron envia `Authorization: Bearer <CRON_SECRET>`.
-5. Verifique build e lint antes do deploy:
+### Preview visual no celular
+
+O app pode ser publicado primeiro sem conectar Supabase ou R2. Nesse modo, as páginas públicas usam a Arena Teste e thumbnails de demonstração; login do painel, reserva persistida e ingestão ficam indisponíveis.
+
+1. Na Vercel, importe o repositório GitHub `LucasLikes/Projeto-Facul` (ou abra o projeto já conectado) e deixe o **Root Directory** vazio.
+2. Use **Next.js** como Framework Preset. Mantenha Install Command, Build Command e Output Directory em **Automatic**; a Vercel detecta `npm ci` e `npm run build` pelo lockfile/framework.
+3. Selecione **Node.js 22.x**.
+4. A primeira implantação de cada projeto Vercel é sempre **Production**. Se o projeto já tiver uma produção, crie/envie uma branch não configurada como Production Branch (por exemplo, `mobile-preview`) e abra a URL **Preview** gerada para esse commit; não envie o teste diretamente à branch de produção.
+5. Se ainda não houver uma primeira implantação e você não quiser tocar no projeto/domínio existente, crie outro projeto Vercel conectado ao mesmo repositório (por exemplo, `projeto-facul-mobile-preview`). A implantação inicial será Production apenas nesse projeto separado; depois, pushes em branches não-production geram Previews nele.
+6. Para o teste visual, não cadastre valores fictícios de `.env.example`. Abra a URL HTTPS gerada pela Vercel no celular, inclusive usando rede móvel. `NEXT_PUBLIC_APP_URL` pode ficar vazia no Preview; as rotas detectam a origem atual.
+
+### Serviços reais
+
+1. Em **Project Settings → Environment Variables**, cadastre cada nome/valor real e selecione **Preview** e/ou **Production**. `.env.example` contém placeholders: não cadastre esses valores de exemplo. `vercel env pull` faz o inverso, baixando as variáveis já cadastradas na Vercel para uso local.
+2. Obtenha `NEXT_PUBLIC_SUPABASE_URL` e a chave publicável/anon nas configurações da API do projeto Supabase. Mantenha `SUPABASE_SERVICE_ROLE_KEY` privada e nunca use o prefixo `NEXT_PUBLIC_` nela.
+3. Obtenha `R2_ACCOUNT_ID` no painel Cloudflare. Crie um token S3 do R2 limitado ao bucket escolhido para leitura/escrita; use a Access Key ID, Secret Access Key e o nome exato do bucket. `R2_ENDPOINT` pode ficar vazio para o endpoint padrão Cloudflare.
+4. Gere `CRON_SECRET` localmente com `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"` e cadastre o resultado diretamente na Vercel. Não envie esse valor por chat nem o versione.
+5. Defina `NEXT_PUBLIC_APP_URL` como o domínio estável do ambiente; no Preview pode ficar vazia. Configure `LIKES_WHATSAPP` com o número público do engenheiro, incluindo país e DDD, para mostrar o CTA do rodapé. Não inclua service-role key, credenciais R2 ou tokens em variáveis `NEXT_PUBLIC_*`.
+6. Em Supabase Auth, configure a URL do site e permita `https://SEU-DOMINIO/auth/callback`. Aplique a migration e o seed no banco.
+7. Mantenha o bucket R2 privado. Para reprodução por `<video>` a partir de URL assinada, configure CORS do bucket para permitir `GET` da origem do app. O upload de ingestão ocorre diretamente do serviço de borda para URLs `PUT` assinadas.
+8. `vercel.json` agenda `GET /api/cron/retention` diariamente às 06:00 UTC (03:00 em São Paulo). Configure `CRON_SECRET` na Vercel; o Cron envia `Authorization: Bearer <CRON_SECRET>`.
+9. Faça novo Deploy depois de alterar variáveis; elas não atualizam deployments existentes. Verifique localmente antes de publicar:
 
 ```bash
 npm run lint
@@ -78,6 +95,8 @@ npm run build
 Datas exibidas e limites diários usam `America/Sao_Paulo`. `time_slots.dia_semana` usa 0 para domingo até 6 para sábado. Slots são recorrentes semanalmente; reservas registram data local e horários. Uma exclusão GiST impede sobreposição entre pedidos pendentes, reservas confirmadas e bloqueios na mesma quadra.
 
 O cron processa até 100 replays expirados por execução, removendo vídeo e thumbnail do R2 antes de apagar o registro. Falhas permanecem para a execução seguinte. A retenção configurada vale para novos uploads; para alterar replays existentes, atualize `expira_em` deles conforme a política da arena.
+
+Em **Configurações → Divulgação local**, o proprietário pode ativar um destaque com título, texto, imagem opcional e WhatsApp do anunciante. O player exibe a assinatura “Replay por Likes” como overlay visual; o arquivo original e o download não são alterados. Gravar uma marca no MP4 exigiria processamento no serviço de vídeo/borda, fora deste MVP.
 
 ## Segurança e privacidade
 
